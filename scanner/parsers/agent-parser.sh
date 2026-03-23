@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -9,11 +11,6 @@ fi
 
 AGENTS_DIR="${HOME}/.claude/agents"
 
-escape_json_string() {
-  local str="$1"
-  printf '%s' "$str" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))"
-}
-
 parse_agent_file() {
   local agent_file="$1"
   local scope="$2"
@@ -21,9 +18,9 @@ parse_agent_file() {
   file_basename=$(basename "$agent_file" .md)
 
   local name description model
-  name=$(sed -n '/^---$/,/^---$/p' "$agent_file" | grep "^name:" | head -1 | sed 's/^name: *//')
-  description=$(sed -n '/^---$/,/^---$/p' "$agent_file" | grep "^description:" | head -1 | sed 's/^description: *//' | tr -d '"')
-  model=$(sed -n '/^---$/,/^---$/p' "$agent_file" | grep "^model:" | head -1 | sed 's/^model: *//')
+  name=$(parse_frontmatter "$agent_file" "name")
+  description=$(parse_frontmatter "$agent_file" "description")
+  model=$(parse_frontmatter "$agent_file" "model")
 
   if [[ -z "$name" ]]; then
     name="$file_basename"

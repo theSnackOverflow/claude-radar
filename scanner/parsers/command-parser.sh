@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -9,11 +11,6 @@ fi
 
 COMMANDS_DIR="${HOME}/.claude/commands"
 
-escape_json_string() {
-  local str="$1"
-  printf '%s' "$str" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))"
-}
-
 parse_command_file() {
   local cmd_file="$1"
   local scope="$2"
@@ -21,8 +18,8 @@ parse_command_file() {
   file_basename=$(basename "$cmd_file" .md)
 
   local name description
-  name=$(sed -n '/^---$/,/^---$/p' "$cmd_file" | grep "^name:" | head -1 | sed 's/^name: *//')
-  description=$(sed -n '/^---$/,/^---$/p' "$cmd_file" | grep "^description:" | head -1 | sed 's/^description: *//' | tr -d '"')
+  name=$(parse_frontmatter "$cmd_file" "name")
+  description=$(parse_frontmatter "$cmd_file" "description")
 
   if [[ -z "$name" ]]; then
     name="$file_basename"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -8,11 +10,6 @@ if ! command -v jq &>/dev/null; then
 fi
 
 SETTINGS_FILE="${HOME}/.claude/settings.json"
-
-escape_json_string() {
-  local str="$1"
-  printf '%s' "$str" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))"
-}
 
 if [[ ! -f "$SETTINGS_FILE" ]]; then
   echo "[]"

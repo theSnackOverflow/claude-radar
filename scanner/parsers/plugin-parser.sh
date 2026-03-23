@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -9,11 +11,6 @@ fi
 
 INSTALLED_PLUGINS_FILE="${HOME}/.claude/plugins/installed_plugins.json"
 SETTINGS_FILE="${HOME}/.claude/settings.json"
-
-escape_json_string() {
-  local str="$1"
-  printf '%s' "$str" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))"
-}
 
 is_plugin_enabled() {
   local plugin_key="$1"
@@ -42,8 +39,8 @@ scan_plugin_skills() {
     fi
 
     local skill_name description
-    skill_name=$(sed -n '/^---$/,/^---$/p' "$skill_file" | grep "^name:" | head -1 | sed 's/^name: *//')
-    description=$(sed -n '/^---$/,/^---$/p' "$skill_file" | grep "^description:" | head -1 | sed 's/^description: *//' | tr -d '"')
+    skill_name=$(parse_frontmatter "$skill_file" "name")
+    description=$(parse_frontmatter "$skill_file" "description")
 
     if [[ -z "$skill_name" ]]; then
       skill_name=$(basename "$skill_dir")
@@ -75,8 +72,8 @@ scan_plugin_agents() {
     fi
 
     local agent_name description
-    agent_name=$(sed -n '/^---$/,/^---$/p' "$agent_file" | grep "^name:" | head -1 | sed 's/^name: *//')
-    description=$(sed -n '/^---$/,/^---$/p' "$agent_file" | grep "^description:" | head -1 | sed 's/^description: *//' | tr -d '"')
+    agent_name=$(parse_frontmatter "$agent_file" "name")
+    description=$(parse_frontmatter "$agent_file" "description")
 
     if [[ -z "$agent_name" ]]; then
       agent_name=$(basename "$agent_file" .md)
@@ -108,8 +105,8 @@ scan_plugin_commands() {
     fi
 
     local cmd_name description
-    cmd_name=$(sed -n '/^---$/,/^---$/p' "$cmd_file" | grep "^name:" | head -1 | sed 's/^name: *//')
-    description=$(sed -n '/^---$/,/^---$/p' "$cmd_file" | grep "^description:" | head -1 | sed 's/^description: *//' | tr -d '"')
+    cmd_name=$(parse_frontmatter "$cmd_file" "name")
+    description=$(parse_frontmatter "$cmd_file" "description")
 
     if [[ -z "$cmd_name" ]]; then
       cmd_name=$(basename "$cmd_file" .md)
@@ -149,7 +146,7 @@ while IFS= read -r plugin_key; do
     continue
   fi
 
-  real_path=$(realpath "$install_path" 2>/dev/null || echo "")
+  real_path=$(safe_realpath "$install_path")
   if [[ -z "$real_path" ]] || [[ "$real_path" != "${HOME}/.claude/plugins/"* ]]; then
     continue
   fi

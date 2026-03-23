@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:${PATH:-}"
 
 N="${1:-5}"
 

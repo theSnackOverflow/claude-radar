@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -8,11 +10,6 @@ if ! command -v jq &>/dev/null; then
 fi
 
 SKILLS_DIR="${HOME}/.claude/skills"
-
-escape_json_string() {
-  local str="$1"
-  printf '%s' "$str" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))"
-}
 
 parse_skill_file() {
   local skill_file="$1"
@@ -23,8 +20,8 @@ parse_skill_file() {
   dir_name=$(basename "$skill_dir")
 
   local name description
-  name=$(sed -n '/^---$/,/^---$/p' "$skill_file" | grep "^name:" | head -1 | sed 's/^name: *//')
-  description=$(sed -n '/^---$/,/^---$/p' "$skill_file" | grep "^description:" | head -1 | sed 's/^description: *//' | tr -d '"')
+  name=$(parse_frontmatter "$skill_file" "name")
+  description=$(parse_frontmatter "$skill_file" "description")
 
   if [[ -z "$name" ]]; then
     name="$dir_name"

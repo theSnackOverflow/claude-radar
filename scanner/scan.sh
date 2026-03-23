@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:${PATH:-}"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -23,6 +23,13 @@ WATCH_FILES=(
   "${HOME}/.claude/plugins/installed_plugins.json"
 )
 
+WATCH_DIRS=(
+  "${HOME}/.claude/agents"
+  "${HOME}/.claude/commands"
+  "${HOME}/.claude/skills"
+  "${HOME}/.claude/output-styles"
+)
+
 needs_rescan() {
   if [[ "$FORCE_RESCAN" == "true" ]]; then
     echo "강제 재스캔 요청됨" >&2
@@ -40,6 +47,13 @@ needs_rescan() {
         echo "변경 감지: $watch_file" >&2
         return 0
       fi
+    fi
+  done
+
+  for dir in "${WATCH_DIRS[@]}"; do
+    if [[ -d "$dir" ]] && [[ "$dir" -nt "$CACHE_FILE" ]]; then
+      echo "변경 감지: $dir" >&2
+      return 0
     fi
   done
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export PATH="/usr/local/bin:/usr/bin:/bin"
+export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:${PATH:-}"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -15,26 +15,30 @@ OUTPUT_FILE="${OUTPUT_DIR}/inventory.json"
 mkdir -p -m 700 "$OUTPUT_DIR"
 
 run_parser() {
-  local parser="$1"
-  local result
-  if result=$(bash "$parser" 2>/dev/null); then
-    if echo "$result" | jq -e 'type == "array"' &>/dev/null; then
-      echo "$result"
-      return
-    fi
+  local parser_name="$1"
+  local parser_path="${PARSERS_DIR}/${parser_name}"
+  if [[ ! -f "$parser_path" ]]; then
+    [[ "${CLAUDE_RADAR_DEBUG:-}" == "1" ]] && echo "Warning: Parser not found: $parser_path" >&2
+    echo "[]"
+    return
   fi
-  echo "[]"
+  if [[ "${CLAUDE_RADAR_DEBUG:-}" == "1" ]]; then
+    echo "Running parser: $parser_name" >&2
+    bash "$parser_path"
+  else
+    bash "$parser_path" 2>/dev/null
+  fi
 }
 
 echo "파서 실행 중..." >&2
 
-mcp_tools=$(run_parser "${PARSERS_DIR}/mcp-parser.sh")
-plugin_tools=$(run_parser "${PARSERS_DIR}/plugin-parser.sh")
-skill_tools=$(run_parser "${PARSERS_DIR}/skill-parser.sh")
-agent_tools=$(run_parser "${PARSERS_DIR}/agent-parser.sh")
-command_tools=$(run_parser "${PARSERS_DIR}/command-parser.sh")
-hook_tools=$(run_parser "${PARSERS_DIR}/hook-parser.sh")
-output_style_tools=$(run_parser "${PARSERS_DIR}/output-style-parser.sh")
+mcp_tools=$(run_parser "mcp-parser.sh")
+plugin_tools=$(run_parser "plugin-parser.sh")
+skill_tools=$(run_parser "skill-parser.sh")
+agent_tools=$(run_parser "agent-parser.sh")
+command_tools=$(run_parser "command-parser.sh")
+hook_tools=$(run_parser "hook-parser.sh")
+output_style_tools=$(run_parser "output-style-parser.sh")
 
 all_tools=$(jq -s 'add' \
   <(echo "$mcp_tools") \
@@ -61,10 +65,8 @@ count_output_style=$(echo "$output_style_tools" | jq 'length')
 
 scanned_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-if [[ -L "$OUTPUT_FILE" ]]; then
-  echo "Error: $OUTPUT_FILE is a symbolic link. Aborting for security." >&2
-  exit 1
-fi
+TMP_FILE=$(mktemp "${OUTPUT_DIR}/inventory.json.tmp.XXXXXX")
+trap 'rm -f "$TMP_FILE"' EXIT
 
 jq -n \
   --argjson version 1 \
@@ -94,7 +96,15 @@ jq -n \
       }
     },
     tools: $tools
-  }' > "$OUTPUT_FILE"
+  }' > "$TMP_FILE"
+
+if [[ -L "$OUTPUT_FILE" ]]; then
+  echo "Error: $OUTPUT_FILE is a symbolic link. Aborting." >&2
+  exit 1
+fi
+
+mv "$TMP_FILE" "$OUTPUT_FILE"
+trap - EXIT
 
 echo "인벤토리 빌드 완료: $OUTPUT_FILE" >&2
 echo "$OUTPUT_FILE"
