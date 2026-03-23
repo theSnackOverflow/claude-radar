@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="/usr/local/bin:/usr/bin:/bin"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -27,13 +28,14 @@ parse_command_file() {
     name="$file_basename"
   fi
 
-  local name_escaped desc_escaped invocation_escaped
+  local name_escaped desc_escaped invocation_escaped id_escaped
   name_escaped=$(escape_json_string "$name")
   desc_escaped=$(escape_json_string "$description")
   invocation_escaped=$(escape_json_string "/$name")
+  id_escaped=$(escape_json_string "command:${name}")
 
-  printf '{"id":"command:%s","type":"command","name":%s,"description":%s,"scope":"%s","enabled":true,"categories":[],"keywords":[],"invocation":%s}\n' \
-    "$name" "$name_escaped" "$desc_escaped" "$scope" "$invocation_escaped"
+  printf '{"id":%s,"type":"command","name":%s,"description":%s,"scope":"%s","enabled":true,"categories":[],"keywords":[],"invocation":%s}\n' \
+    "$id_escaped" "$name_escaped" "$desc_escaped" "$scope" "$invocation_escaped"
 }
 
 all_results=""

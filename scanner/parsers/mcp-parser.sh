@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="/usr/local/bin:/usr/bin:/bin"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -51,6 +52,13 @@ escape_json_string() {
   printf '%s' "$str" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))"
 }
 
+mask_secrets() {
+  local s="$1"
+  echo "$s" | sed -E \
+    -e 's/(--?)(token|key|secret|password|api[_-]?key|auth|credential)([= ]+)[^ ]*/\1\2\3****/gi' \
+    -e 's/"(token|key|secret|password|api[_-]?key|auth|credential)"\s*:\s*"[^"]*"/"\1": "****"/gi'
+}
+
 parse_mcp_file() {
   local file="$1"
   local scope="$2"
@@ -65,29 +73,28 @@ parse_mcp_file() {
     categories=$(infer_categories "$server_name")
 
     local server_type
-    server_type=$(jq -r ".mcpServers[\"$server_name\"].type // \"stdio\"" "$file")
+    server_type=$(jq -r --arg name "$server_name" '.mcpServers[$name].type // "stdio"' "$file")
 
     local command_str
-    command_str=$(jq -r ".mcpServers[\"$server_name\"].command // \"\"" "$file")
+    command_str=$(jq -r --arg name "$server_name" '.mcpServers[$name].command // ""' "$file")
     local url_str
-    url_str=$(jq -r ".mcpServers[\"$server_name\"].url // \"\"" "$file")
+    url_str=$(jq -r --arg name "$server_name" '.mcpServers[$name].url // ""' "$file")
 
     local invocation
     if [[ -n "$url_str" && "$url_str" != "null" ]]; then
       invocation=$(escape_json_string "$url_str")
     elif [[ -n "$command_str" && "$command_str" != "null" ]]; then
-      local args
-      args=$(jq -r ".mcpServers[\"$server_name\"].args // [] | join(\" \")" "$file")
-      invocation=$(escape_json_string "$command_str $args")
+      invocation=$(escape_json_string "$command_str")
     else
       invocation=$(escape_json_string "$server_name")
     fi
 
-    local name_escaped
+    local name_escaped id_escaped
     name_escaped=$(escape_json_string "$server_name")
+    id_escaped=$(escape_json_string "mcp:${server_name}")
 
-    printf '{"id":"mcp:%s","type":"mcp","name":%s,"description":null,"scope":"%s","enabled":true,"categories":%s,"keywords":[],"invocation":%s}\n' \
-      "$server_name" "$name_escaped" "$scope" "$categories" "$invocation"
+    printf '{"id":%s,"type":"mcp","name":%s,"description":null,"scope":"%s","enabled":true,"categories":%s,"keywords":[],"invocation":%s}\n' \
+      "$id_escaped" "$name_escaped" "$scope" "$categories" "$invocation"
   done
 }
 

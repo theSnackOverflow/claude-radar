@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="/usr/local/bin:/usr/bin:/bin"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -11,7 +12,7 @@ PARSERS_DIR="${SCRIPT_DIR}/parsers"
 OUTPUT_DIR="${HOME}/.claude/cache/claude-radar"
 OUTPUT_FILE="${OUTPUT_DIR}/inventory.json"
 
-mkdir -p "$OUTPUT_DIR"
+mkdir -p -m 700 "$OUTPUT_DIR"
 
 run_parser() {
   local parser="$1"
@@ -59,6 +60,11 @@ count_hook=$(echo "$hook_tools" | jq 'length')
 count_output_style=$(echo "$output_style_tools" | jq 'length')
 
 scanned_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+if [[ -L "$OUTPUT_FILE" ]]; then
+  echo "Error: $OUTPUT_FILE is a symbolic link. Aborting for security." >&2
+  exit 1
+fi
 
 jq -n \
   --argjson version 1 \

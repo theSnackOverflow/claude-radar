@@ -43,4 +43,10 @@ CMDBLOCK
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT_NAME="$1"
 shift
+
+if [[ "$SCRIPT_NAME" == *"/"* ]] || [[ "$SCRIPT_NAME" == *"\\"* ]] || [[ "$SCRIPT_NAME" == ".."* ]] || [[ "$SCRIPT_NAME" == *".." ]]; then
+  echo "Error: Invalid script name: $SCRIPT_NAME" >&2
+  exit 1
+fi
+
 exec bash "${SCRIPT_DIR}/${SCRIPT_NAME}" "$@"

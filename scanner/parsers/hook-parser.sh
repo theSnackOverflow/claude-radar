@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="/usr/local/bin:/usr/bin:/bin"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -27,16 +28,17 @@ fi
 all_results=""
 
 while IFS= read -r event_type; do
-  hook_count=$(jq -r ".hooks[\"$event_type\"] | length" "$SETTINGS_FILE" 2>/dev/null)
+  hook_count=$(jq -r --arg evt "$event_type" '.hooks[$evt] | length' "$SETTINGS_FILE" 2>/dev/null)
 
   for ((i=0; i<hook_count; i++)); do
-    matcher=$(jq -r ".hooks[\"$event_type\"][$i].matcher // \"\"" "$SETTINGS_FILE" 2>/dev/null)
-    inner_hooks=$(jq -r ".hooks[\"$event_type\"][$i].hooks | length" "$SETTINGS_FILE" 2>/dev/null)
+    matcher=$(jq -r --arg evt "$event_type" --argjson idx "$i" '.hooks[$evt][$idx].matcher // ""' "$SETTINGS_FILE" 2>/dev/null)
+    inner_hooks=$(jq -r --arg evt "$event_type" --argjson idx "$i" '.hooks[$evt][$idx].hooks | length' "$SETTINGS_FILE" 2>/dev/null)
 
     for ((j=0; j<inner_hooks; j++)); do
-      hook_type=$(jq -r ".hooks[\"$event_type\"][$i].hooks[$j].type // \"command\"" "$SETTINGS_FILE" 2>/dev/null)
-      command=$(jq -r ".hooks[\"$event_type\"][$i].hooks[$j].command // \"\"" "$SETTINGS_FILE" 2>/dev/null)
-      async=$(jq -r ".hooks[\"$event_type\"][$i].hooks[$j].async // false" "$SETTINGS_FILE" 2>/dev/null)
+      hook_type=$(jq -r --arg evt "$event_type" --argjson idx "$i" --argjson jdx "$j" '.hooks[$evt][$idx].hooks[$jdx].type // "command"' "$SETTINGS_FILE" 2>/dev/null)
+      command=$(jq -r --arg evt "$event_type" --argjson idx "$i" --argjson jdx "$j" '.hooks[$evt][$idx].hooks[$jdx].command // ""' "$SETTINGS_FILE" 2>/dev/null)
+      async=$(jq -r --arg evt "$event_type" --argjson idx "$i" --argjson jdx "$j" '.hooks[$evt][$idx].hooks[$jdx].async // false' "$SETTINGS_FILE" 2>/dev/null)
+      if [[ "$async" != "true" ]] && [[ "$async" != "false" ]]; then async="false"; fi
 
       local_id="${event_type}:${i}:${j}"
       if [[ -n "$matcher" ]]; then

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="/usr/local/bin:/usr/bin:/bin"
 
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
@@ -21,7 +22,7 @@ is_plugin_enabled() {
     return
   fi
   local enabled
-  enabled=$(jq -r ".enabledPlugins[\"$plugin_key\"] // false" "$SETTINGS_FILE" 2>/dev/null)
+  enabled=$(jq -r --arg key "$plugin_key" '.enabledPlugins[$key] // false' "$SETTINGS_FILE" 2>/dev/null)
   echo "$enabled"
 }
 
@@ -48,13 +49,14 @@ scan_plugin_skills() {
       skill_name=$(basename "$skill_dir")
     fi
 
-    local name_escaped desc_escaped plugin_key_escaped
+    local name_escaped desc_escaped plugin_key_escaped id_escaped
     name_escaped=$(escape_json_string "$skill_name")
     desc_escaped=$(escape_json_string "$description")
     plugin_key_escaped=$(escape_json_string "$plugin_key")
+    id_escaped=$(escape_json_string "skill:plugin:${plugin_key}:${skill_name}")
 
-    printf '{"id":"skill:plugin:%s:%s","type":"skill","name":%s,"description":%s,"scope":"plugin","enabled":true,"categories":[],"keywords":[],"invocation":%s,"plugin":%s}\n' \
-      "$plugin_key" "$skill_name" "$name_escaped" "$desc_escaped" "$name_escaped" "$plugin_key_escaped"
+    printf '{"id":%s,"type":"skill","name":%s,"description":%s,"scope":"plugin","enabled":true,"categories":[],"keywords":[],"invocation":%s,"plugin":%s}\n' \
+      "$id_escaped" "$name_escaped" "$desc_escaped" "$name_escaped" "$plugin_key_escaped"
   done
 }
 
@@ -80,13 +82,14 @@ scan_plugin_agents() {
       agent_name=$(basename "$agent_file" .md)
     fi
 
-    local name_escaped desc_escaped plugin_key_escaped
+    local name_escaped desc_escaped plugin_key_escaped id_escaped
     name_escaped=$(escape_json_string "$agent_name")
     desc_escaped=$(escape_json_string "$description")
     plugin_key_escaped=$(escape_json_string "$plugin_key")
+    id_escaped=$(escape_json_string "agent:plugin:${plugin_key}:${agent_name}")
 
-    printf '{"id":"agent:plugin:%s:%s","type":"plugin-agent","name":%s,"description":%s,"scope":"plugin","enabled":true,"categories":[],"keywords":[],"invocation":%s,"plugin":%s}\n' \
-      "$plugin_key" "$agent_name" "$name_escaped" "$desc_escaped" "$name_escaped" "$plugin_key_escaped"
+    printf '{"id":%s,"type":"plugin-agent","name":%s,"description":%s,"scope":"plugin","enabled":true,"categories":[],"keywords":[],"invocation":%s,"plugin":%s}\n' \
+      "$id_escaped" "$name_escaped" "$desc_escaped" "$name_escaped" "$plugin_key_escaped"
   done
 }
 
@@ -112,13 +115,14 @@ scan_plugin_commands() {
       cmd_name=$(basename "$cmd_file" .md)
     fi
 
-    local name_escaped desc_escaped plugin_key_escaped
+    local name_escaped desc_escaped plugin_key_escaped id_escaped
     name_escaped=$(escape_json_string "$cmd_name")
     desc_escaped=$(escape_json_string "$description")
     plugin_key_escaped=$(escape_json_string "$plugin_key")
+    id_escaped=$(escape_json_string "command:plugin:${plugin_key}:${cmd_name}")
 
-    printf '{"id":"command:plugin:%s:%s","type":"command","name":%s,"description":%s,"scope":"plugin","enabled":true,"categories":[],"keywords":[],"invocation":%s,"plugin":%s}\n' \
-      "$plugin_key" "$cmd_name" "$name_escaped" "$desc_escaped" "$name_escaped" "$plugin_key_escaped"
+    printf '{"id":%s,"type":"command","name":%s,"description":%s,"scope":"plugin","enabled":true,"categories":[],"keywords":[],"invocation":%s,"plugin":%s}\n' \
+      "$id_escaped" "$name_escaped" "$desc_escaped" "$name_escaped" "$plugin_key_escaped"
   done
 }
 
@@ -139,11 +143,17 @@ all_results=""
 while IFS= read -r plugin_key; do
   enabled=$(is_plugin_enabled "$plugin_key")
 
-  install_path=$(jq -r ".plugins[\"$plugin_key\"] // [] | if type == \"array\" then .[0].installPath else .installPath end // \"\"" "$INSTALLED_PLUGINS_FILE" 2>/dev/null)
+  install_path=$(jq -r --arg key "$plugin_key" '.plugins[$key] // [] | if type == "array" then .[0].installPath else .installPath end // ""' "$INSTALLED_PLUGINS_FILE" 2>/dev/null)
 
   if [[ -z "$install_path" || "$install_path" == "null" ]]; then
     continue
   fi
+
+  real_path=$(realpath "$install_path" 2>/dev/null || echo "")
+  if [[ -z "$real_path" ]] || [[ "$real_path" != "${HOME}/.claude/plugins/"* ]]; then
+    continue
+  fi
+  install_path="$real_path"
 
   plugin_json_file="${install_path}/.claude-plugin/plugin.json"
 
@@ -161,9 +171,10 @@ while IFS= read -r plugin_key; do
   name_escaped=$(escape_json_string "$local_name")
   desc_escaped=$(escape_json_string "$local_description")
   key_escaped=$(escape_json_string "$plugin_key")
+  plugin_id_escaped=$(escape_json_string "plugin:${plugin_key}")
 
-  plugin_entry=$(printf '{"id":"plugin:%s","type":"plugin","name":%s,"description":%s,"scope":"global","enabled":%s,"categories":[],"keywords":%s,"invocation":null}' \
-    "$plugin_key" "$name_escaped" "$desc_escaped" "$enabled" "$local_keywords")
+  plugin_entry=$(printf '{"id":%s,"type":"plugin","name":%s,"description":%s,"scope":"global","enabled":%s,"categories":[],"keywords":%s,"invocation":null}' \
+    "$plugin_id_escaped" "$name_escaped" "$desc_escaped" "$enabled" "$local_keywords")
 
   if [[ -n "$all_results" ]]; then
     all_results="${all_results}"$'\n'"${plugin_entry}"
