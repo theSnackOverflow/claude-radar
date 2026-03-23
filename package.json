@@ -1,0 +1,16 @@
+{
+  "name": "claude-radar",
+  "version": "0.1.0",
+  "description": "Automatically discovers and recommends installed Claude Code tools",
+  "license": "MIT",
+  "author": "2sac",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/2sac/claude-radar.git"
+  },
+  "keywords": ["claude-code", "plugin", "tools", "discovery", "mcp", "skills"],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

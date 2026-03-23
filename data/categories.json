@@ -1,0 +1,58 @@
+{
+  "categories": {
+    "browser-automation": {
+      "displayName": "Browser Automation",
+      "displayNameKo": "브라우저 자동화",
+      "keywords": ["playwright", "browser", "web", "screenshot", "click", "navigate", "scrape", "crawl", "selenium", "puppeteer", "devtools", "chrome"],
+      "useCases": ["웹 테스트", "스크린샷 캡처", "웹 스크래핑", "UI 검증", "E2E 테스트"]
+    },
+    "code-quality": {
+      "displayName": "Code Quality",
+      "displayNameKo": "코드 품질",
+      "keywords": ["review", "lint", "test", "refactor", "debug", "quality", "coverage", "eslint", "prettier", "sonar"],
+      "useCases": ["코드 리뷰", "리팩토링", "테스트 작성", "버그 수정", "린트 검사"]
+    },
+    "design": {
+      "displayName": "Design & UI",
+      "displayNameKo": "디자인 및 UI",
+      "keywords": ["figma", "design", "ui", "ux", "component", "layout", "shadcn", "tailwind", "css", "wireframe", "prototype"],
+      "useCases": ["디자인 시스템", "컴포넌트 제작", "Figma 연동", "와이어프레임"]
+    },
+    "planning": {
+      "displayName": "Planning & Strategy",
+      "displayNameKo": "기획 및 전략",
+      "keywords": ["plan", "brainstorm", "spec", "requirement", "strategy", "prd", "roadmap", "okr", "backlog", "sprint"],
+      "useCases": ["기능 기획", "요구사항 정의", "아키텍처 설계", "스프린트 계획"]
+    },
+    "documentation": {
+      "displayName": "Documentation",
+      "displayNameKo": "문서화",
+      "keywords": ["doc", "write", "blog", "readme", "api-doc", "context7", "markdown", "changelog"],
+      "useCases": ["문서 작성", "블로그 포스트", "API 문서", "README 작성"]
+    },
+    "devops": {
+      "displayName": "DevOps & Infrastructure",
+      "displayNameKo": "DevOps 및 인프라",
+      "keywords": ["deploy", "ci", "cd", "docker", "kubernetes", "infra", "cloud", "aws", "gcp", "github", "actions"],
+      "useCases": ["배포 자동화", "CI/CD 설정", "인프라 관리"]
+    },
+    "research": {
+      "displayName": "Research & Data",
+      "displayNameKo": "조사 및 데이터",
+      "keywords": ["search", "research", "fetch", "api", "data", "analytics", "market", "competitor", "huggingface"],
+      "useCases": ["라이브러리 조사", "API 문서 검색", "시장 조사", "데이터 분석"]
+    },
+    "task-management": {
+      "displayName": "Task Management",
+      "displayNameKo": "태스크 관리",
+      "keywords": ["task", "todo", "shrimp", "ticket", "issue", "project", "notion", "jira"],
+      "useCases": ["태스크 관리", "이슈 추적", "프로젝트 관리"]
+    },
+    "communication": {
+      "displayName": "Communication",
+      "displayNameKo": "커뮤니케이션",
+      "keywords": ["slack", "email", "gmail", "calendar", "meeting", "discord", "notification"],
+      "useCases": ["이메일 관리", "캘린더", "알림", "미팅 관리"]
+    }
+  }
+}

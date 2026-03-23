@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+INVENTORY_PATH="${HOME}/.claude/cache/claude-radar/inventory.json"
+
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+scanner_error=""
+if ! bash "${PLUGIN_ROOT}/scanner/scan.sh" > /dev/null 2>&1; then
+    scanner_error="스캐너 실행 중 오류가 발생했습니다. inventory.json이 최신 상태가 아닐 수 있습니다."
+fi
+
+session_context=""
+
+if command -v jq > /dev/null 2>&1 && [ -f "${INVENTORY_PATH}" ]; then
+    total=$(jq '.summary.total // 0' "${INVENTORY_PATH}")
+
+    mcp_names=$(jq -r '[.tools[] | select(.type == "mcp") | .name] | join(", ")' "${INVENTORY_PATH}")
+    mcp_count=$(jq '[.tools[] | select(.type == "mcp")] | length' "${INVENTORY_PATH}")
+
+    plugin_names=$(jq -r '[.tools[] | select(.type == "plugin") | .name] | join(", ")' "${INVENTORY_PATH}")
+    plugin_count=$(jq '[.tools[] | select(.type == "plugin")] | length' "${INVENTORY_PATH}")
+
+    skill_names=$(jq -r '[.tools[] | select(.type == "skill") | .name] | join(", ")' "${INVENTORY_PATH}")
+    skill_count=$(jq '[.tools[] | select(.type == "skill")] | length' "${INVENTORY_PATH}")
+
+    agent_names=$(jq -r '[.tools[] | select(.type == "agent") | .name] | join(", ")' "${INVENTORY_PATH}")
+    agent_count=$(jq '[.tools[] | select(.type == "agent")] | length' "${INVENTORY_PATH}")
+
+    command_names=$(jq -r '[.tools[] | select(.type == "command") | .name] | join(", ")' "${INVENTORY_PATH}")
+    command_count=$(jq '[.tools[] | select(.type == "command")] | length' "${INVENTORY_PATH}")
+
+    lines=""
+    lines="${lines}${total}개의 도구가 사용 가능합니다."
+    lines="${lines}\n"
+
+    if [ "${mcp_count}" -gt 0 ]; then
+        lines="${lines}\n[MCP ${mcp_count}개] ${mcp_names}"
+    fi
+    if [ "${plugin_count}" -gt 0 ]; then
+        lines="${lines}\n[Plugin ${plugin_count}개] ${plugin_names}"
+    fi
+    if [ "${skill_count}" -gt 0 ]; then
+        lines="${lines}\n[Skill ${skill_count}개] ${skill_names}"
+    fi
+    if [ "${agent_count}" -gt 0 ]; then
+        lines="${lines}\n[Agent ${agent_count}개] ${agent_names}"
+    fi
+    if [ "${command_count}" -gt 0 ]; then
+        lines="${lines}\n[Command ${command_count}개] ${command_names}"
+    fi
+
+    lines="${lines}\n\n도구 상세 조회 또는 현재 작업에 맞는 추천이 필요하면 claude-radar:discover skill을 사용하세요."
+
+    if [ -n "${scanner_error}" ]; then
+        lines="${lines}\n\n주의: ${scanner_error}"
+    fi
+
+    session_context="<claude-radar>\n${lines}\n</claude-radar>"
+else
+    fallback_msg="claude-radar: 도구 인벤토리를 불러올 수 없습니다."
+    if [ -n "${scanner_error}" ]; then
+        fallback_msg="${fallback_msg} ${scanner_error}"
+    elif ! command -v jq > /dev/null 2>&1; then
+        fallback_msg="${fallback_msg} jq가 설치되어 있지 않습니다."
+    fi
+    fallback_msg="${fallback_msg} 도구 추천이 필요하면 claude-radar:discover skill을 사용하세요."
+    session_context="<claude-radar>\n${fallback_msg}\n</claude-radar>"
+fi
+
+escaped_context=$(escape_for_json "${session_context}")
+
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+    printf '{\n  "additional_context": "%s"\n}\n' "${escaped_context}"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+    printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "${escaped_context}"
+else
+    printf '{\n  "additional_context": "%s"\n}\n' "${escaped_context}"
+fi
+
+exit 0
