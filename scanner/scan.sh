@@ -3,7 +3,10 @@ set -euo pipefail
 export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:${PATH:-}"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 

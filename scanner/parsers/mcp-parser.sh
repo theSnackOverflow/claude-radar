@@ -5,7 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 
@@ -51,9 +54,11 @@ infer_categories() {
 
 mask_secrets() {
   local s="$1"
+  local keywords="token|key|secret|password|api.key|auth|credential|TOKEN|KEY|SECRET|PASSWORD|API.KEY|AUTH|CREDENTIAL"
   echo "$s" | sed -E \
-    -e 's/(--?)(token|key|secret|password|api[_-]?key|auth|credential)([= ]+)[^ ]*/\1\2\3****/gi' \
-    -e 's/"(token|key|secret|password|api[_-]?key|auth|credential)"\s*:\s*"[^"]*"/"\1": "****"/gi'
+    -e "s/(--?)(${keywords})([= ]+)[^ ]*/\1\2\3****/g" \
+    -e "s/\"(${keywords})\"([[:space:]]*:[[:space:]]*)\"[^\"]*\"/\"\1\"\2\"****\"/g" \
+    -e "s/([?&])(token|key|secret|password|api[._-]key|auth|credential)=[^&# ]*/\1\2=****/g"
 }
 
 parse_mcp_file() {
@@ -61,6 +66,12 @@ parse_mcp_file() {
   local scope="$2"
 
   if [[ ! -f "$file" ]]; then
+    echo "[]"
+    return
+  fi
+
+  if ! jq empty "$file" 2>/dev/null; then
+    echo "Warning: Invalid JSON in $file — skipping" >&2
     echo "[]"
     return
   fi
@@ -79,19 +90,20 @@ parse_mcp_file() {
 
     local invocation
     if [[ -n "$url_str" && "$url_str" != "null" ]]; then
-      invocation=$(escape_json_string "$url_str")
+      invocation=$(escape_json_string "$(mask_secrets "$url_str")")
     elif [[ -n "$command_str" && "$command_str" != "null" ]]; then
-      invocation=$(escape_json_string "$command_str")
+      invocation=$(escape_json_string "$(mask_secrets "$command_str")")
     else
       invocation=$(escape_json_string "$server_name")
     fi
 
-    local name_escaped id_escaped
+    local name_escaped id_escaped source_escaped
     name_escaped=$(escape_json_string "$server_name")
     id_escaped=$(escape_json_string "mcp:${server_name}")
+    source_escaped=$(escape_json_string "$file")
 
-    printf '{"id":%s,"type":"mcp","name":%s,"description":null,"scope":"%s","enabled":true,"categories":%s,"keywords":[],"invocation":%s}\n' \
-      "$id_escaped" "$name_escaped" "$scope" "$categories" "$invocation"
+    printf '{"id":%s,"type":"mcp","name":%s,"description":null,"scope":"%s","enabled":true,"categories":%s,"keywords":[],"invocation":%s,"source":%s}\n' \
+      "$id_escaped" "$name_escaped" "$scope" "$categories" "$invocation" "$source_escaped"
   done
 }
 

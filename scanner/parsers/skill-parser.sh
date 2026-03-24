@@ -5,7 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 
@@ -27,13 +30,14 @@ parse_skill_file() {
     name="$dir_name"
   fi
 
-  local name_escaped desc_escaped id_escaped
+  local name_escaped desc_escaped id_escaped source_escaped
   name_escaped=$(escape_json_string "$name")
   desc_escaped=$(escape_json_string "$description")
   id_escaped=$(escape_json_string "skill:${name}")
+  source_escaped=$(escape_json_string "$skill_file")
 
-  printf '{"id":%s,"type":"skill","name":%s,"description":%s,"scope":"%s","enabled":true,"categories":[],"keywords":[],"invocation":%s}\n' \
-    "$id_escaped" "$name_escaped" "$desc_escaped" "$scope" "$name_escaped"
+  printf '{"id":%s,"type":"skill","name":%s,"description":%s,"scope":"%s","enabled":true,"categories":[],"keywords":[],"invocation":%s,"source":%s}\n' \
+    "$id_escaped" "$name_escaped" "$desc_escaped" "$scope" "$name_escaped" "$source_escaped"
 }
 
 all_results=""

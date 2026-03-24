@@ -3,10 +3,10 @@
   "description": "Automatically discovers and recommends installed Claude Code tools (MCP, skills, agents, plugins) based on your current context",
   "version": "0.1.0",
   "author": {
-    "name": "2sac"
+    "name": "theSnackOverflow"
   },
-  "homepage": "https://github.com/2sac/claude-radar",
-  "repository": "https://github.com/2sac/claude-radar",
+  "homepage": "https://github.com/theSnackOverflow/claude-radar",
+  "repository": "https://github.com/theSnackOverflow/claude-radar",
   "license": "MIT",
   "keywords": ["discovery", "recommendation", "inventory", "tools", "mcp", "skills", "agents", "plugins"]
 }

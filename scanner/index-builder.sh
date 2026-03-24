@@ -3,7 +3,10 @@ set -euo pipefail
 export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:${PATH:-}"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 
@@ -13,6 +16,16 @@ OUTPUT_DIR="${HOME}/.claude/cache/claude-radar"
 OUTPUT_FILE="${OUTPUT_DIR}/inventory.json"
 
 mkdir -p -m 700 "$OUTPUT_DIR"
+
+LOCK_FILE="${OUTPUT_DIR}/scan.lock"
+if command -v flock &>/dev/null; then
+  exec 9>"$LOCK_FILE"
+  if ! flock -n 9; then
+    echo "Another scan is already running. Skipping." >&2
+    echo "$OUTPUT_FILE"
+    exit 0
+  fi
+fi
 
 run_parser() {
   local parser_name="$1"
@@ -65,7 +78,10 @@ count_output_style=$(echo "$output_style_tools" | jq 'length')
 
 scanned_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-TMP_FILE=$(mktemp "${OUTPUT_DIR}/inventory.json.tmp.XXXXXX")
+TMP_FILE=$(mktemp "${OUTPUT_DIR}/inventory.json.tmp.XXXXXX") || {
+  echo "Error: Failed to create temporary file in ${OUTPUT_DIR}. Disk may be full." >&2
+  exit 1
+}
 trap 'rm -f "$TMP_FILE"' EXIT
 
 jq -n \
@@ -104,6 +120,7 @@ if [[ -L "$OUTPUT_FILE" ]]; then
 fi
 
 mv "$TMP_FILE" "$OUTPUT_FILE"
+chmod 600 "$OUTPUT_FILE"
 trap - EXIT
 
 echo "인벤토리 빌드 완료: $OUTPUT_FILE" >&2

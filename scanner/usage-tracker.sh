@@ -15,9 +15,9 @@ fi
 
 CACHE_DIR="$HOME/.claude/cache/claude-radar"
 USAGE_FILE="$CACHE_DIR/usage.json"
-TMP_FILE=$(mktemp "$CACHE_DIR/usage.json.tmp.XXXXXX")
-
 mkdir -p -m 700 "$CACHE_DIR"
+TMP_FILE=$(mktemp "$CACHE_DIR/usage.json.tmp.XXXXXX") || exit 0
+trap 'rm -f "$TMP_FILE" 2>/dev/null' EXIT
 
 if [[ ! -f "$USAGE_FILE" ]] && [[ ! -L "$USAGE_FILE" ]]; then
   (set -o noclobber; printf '{"version":1,"lastUpdated":"","tools":{}}\n' > "$USAGE_FILE") 2>/dev/null || true
@@ -43,3 +43,4 @@ if [[ -L "$USAGE_FILE" ]]; then
 fi
 
 mv "$TMP_FILE" "$USAGE_FILE"
+chmod 600 "$USAGE_FILE"

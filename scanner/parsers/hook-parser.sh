@@ -5,13 +5,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 
 SETTINGS_FILE="${HOME}/.claude/settings.json"
 
 if [[ ! -f "$SETTINGS_FILE" ]]; then
+  echo "[]"
+  exit 0
+fi
+
+if ! jq empty "$SETTINGS_FILE" 2>/dev/null; then
+  echo "Warning: Invalid JSON in $SETTINGS_FILE — skipping" >&2
   echo "[]"
   exit 0
 fi
@@ -47,9 +56,10 @@ while IFS= read -r event_type; do
       cmd_escaped=$(escape_json_string "$command")
       hook_type_escaped=$(escape_json_string "$hook_type")
       id_escaped=$(escape_json_string "hook:${local_id}")
+      source_escaped=$(escape_json_string "$SETTINGS_FILE")
 
-      entry=$(printf '{"id":%s,"type":"hook","name":%s,"description":null,"scope":"global","enabled":true,"categories":["automation"],"keywords":[],"invocation":%s,"event":%s,"matcher":%s,"hookType":%s,"async":%s}' \
-        "$id_escaped" "$event_escaped" "$cmd_escaped" "$event_escaped" "$matcher_escaped" "$hook_type_escaped" "$async")
+      entry=$(printf '{"id":%s,"type":"hook","name":%s,"description":null,"scope":"global","enabled":true,"categories":["automation"],"keywords":[],"invocation":%s,"event":%s,"matcher":%s,"hookType":%s,"async":%s,"source":%s}' \
+        "$id_escaped" "$event_escaped" "$cmd_escaped" "$event_escaped" "$matcher_escaped" "$hook_type_escaped" "$async" "$source_escaped")
 
       if [[ -n "$all_results" ]]; then
         all_results="${all_results}"$'\n'"${entry}"

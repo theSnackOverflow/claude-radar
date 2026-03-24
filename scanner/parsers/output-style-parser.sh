@@ -5,7 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 
@@ -40,13 +43,14 @@ parse_output_style_file() {
     enabled="true"
   fi
 
-  local name_escaped desc_escaped id_escaped
+  local name_escaped desc_escaped id_escaped source_escaped
   name_escaped=$(escape_json_string "$name")
   desc_escaped=$(escape_json_string "$description")
   id_escaped=$(escape_json_string "output-style:${file_basename}")
+  source_escaped=$(escape_json_string "$style_file")
 
-  printf '{"id":%s,"type":"output-style","name":%s,"description":%s,"scope":"global","enabled":%s,"categories":["style","output"],"keywords":[],"invocation":null}\n' \
-    "$id_escaped" "$name_escaped" "$desc_escaped" "$enabled"
+  printf '{"id":%s,"type":"output-style","name":%s,"description":%s,"scope":"global","enabled":%s,"categories":["style","output"],"keywords":[],"invocation":null,"source":%s}\n' \
+    "$id_escaped" "$name_escaped" "$desc_escaped" "$enabled" "$source_escaped"
 }
 
 all_results=""

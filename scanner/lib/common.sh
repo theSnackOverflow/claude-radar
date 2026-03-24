@@ -17,16 +17,6 @@ parse_frontmatter() {
     | tr -d '"'\''`'
 }
 
-append_result() {
-  local current="$1"
-  local entry="$2"
-  if [[ -n "$current" ]]; then
-    printf '%s\n%s' "$current" "$entry"
-  else
-    printf '%s' "$entry"
-  fi
-}
-
 safe_realpath() {
   local path="$1"
   if command -v realpath &>/dev/null; then

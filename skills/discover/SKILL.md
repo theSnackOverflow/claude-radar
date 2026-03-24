@@ -37,14 +37,14 @@ claude-radar 스캐너를 먼저 실행해 주세요:
 
 사용자의 요청에 특정 유형 필터가 포함된 경우 해당 유형만 표시한다.
 
-필터 키워드 매핑:
-- "MCP", "mcp", "--type mcp" → `mcpServers` 섹션만
-- "플러그인", "plugin", "--type plugin" → `plugins` 섹션만
-- "스킬", "skill", "--type skill" → `skills` 섹션만
-- "에이전트", "agent", "--type agent" → `agents` 섹션만
-- "커맨드", "command", "--type command" → `commands` 섹션만
-- "훅", "hook", "--type hook" → `hooks` 섹션만
-- "출력 스타일", "output style", "--type output-style" → `outputStyles` 섹션만
+필터 키워드 매핑 (tools 배열의 type 필드 기준):
+- "MCP", "mcp", "--type mcp" → `type == "mcp"` 항목만
+- "플러그인", "plugin", "--type plugin" → `type == "plugin"` 항목만
+- "스킬", "skill", "--type skill" → `type == "skill"` 항목만
+- "에이전트", "agent", "--type agent" → `type == "agent"` 항목만
+- "커맨드", "command", "--type command" → `type == "command"` 항목만
+- "훅", "hook", "--type hook" → `type == "hook"` 항목만
+- "출력 스타일", "output style", "--type output-style" → `type == "output-style"` 항목만
 
 필터가 없으면 모든 섹션을 표시한다.
 
@@ -66,28 +66,36 @@ claude-radar 스캐너를 먼저 실행해 주세요:
 
 inventory.json 의 데이터를 읽어 아래 형식으로 출력한다.
 
-inventory.json 의 예상 구조:
+inventory.json 의 실제 구조:
 ```json
 {
-  "generatedAt": "...",
-  "mcpServers": [...],
-  "plugins": [...],
-  "skills": [...],
-  "agents": [...],
-  "commands": [...],
-  "hooks": [...],
-  "outputStyles": [...]
+  "version": 1,
+  "scannedAt": "2026-03-24T00:00:00Z",
+  "summary": {
+    "total": 15,
+    "mcp": 5,
+    "plugin": 2,
+    "skill": 3,
+    "agent": 2,
+    "command": 1,
+    "hook": 1,
+    "output-style": 1
+  },
+  "tools": [
+    { "id": "mcp:context7", "type": "mcp", "name": "context7", "description": null, "scope": "global", "enabled": true, "categories": ["documentation"], "invocation": "npx @context7/mcp", "source": "/Users/user/.claude/mcp.json" },
+    { "id": "skill:discover", "type": "skill", "name": "discover", "description": "List installed tools", "scope": "global", "enabled": true, "invocation": "discover", "source": "/Users/user/.claude/skills/discover/SKILL.md" }
+  ]
 }
 ```
 
-각 배열의 아이템 구조는 claude-radar 스캐너가 생성한 형태를 따른다. 필드가 없으면 "-" 로 표시한다.
+모든 도구는 `tools` 단일 배열에 포함되며 `type` 필드로 구분된다. 필드가 없으면 "-" 로 표시한다.
 
 ### 출력 형식
 
 ```
 ## 설치된 도구 목록 (총 {전체 합산 수}개)
 
-스캔 시각: {generatedAt}
+스캔 시각: {scannedAt}
 
 ### MCP 서버 ({count}개)
 | 이름 | 설명 | 상태 |

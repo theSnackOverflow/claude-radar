@@ -100,9 +100,15 @@ model: inherit
 1. 실행 결과를 간략히 요약하여 사용자에게 전달한다
 2. `$HOME/.claude/cache/claude-radar/usage.json` 파일이 존재하는 경우, 해당 도구의 실행 기록을 업데이트한다
 
-usage.json 업데이트는 직접 JSON을 수정하지 않고, Bash 도구로 usage-tracker.sh를 호출한다:
+usage.json 업데이트는 직접 JSON을 수정하지 않고, Bash 도구로 usage-tracker.sh를 호출한다.
+CLAUDE_PLUGIN_ROOT 환경변수가 설정된 경우 이를 우선 사용하고, 없으면 glob으로 탐색한다:
 ```bash
-bash "$HOME/.claude/plugins/cache/*/claude-radar/*/scanner/usage-tracker.sh" "[tool-id]" "[tool-name]"
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+  bash "${CLAUDE_PLUGIN_ROOT}/scanner/usage-tracker.sh" "[tool-id]" "[tool-name]"
+else
+  tracker=$(ls "$HOME/.claude/plugins/"*/claude-radar/*/scanner/usage-tracker.sh 2>/dev/null | head -1)
+  [[ -n "$tracker" ]] && bash "$tracker" "[tool-id]" "[tool-name]"
+fi
 ```
 usage-tracker.sh를 찾을 수 없으면 업데이트를 건너뛴다.
 

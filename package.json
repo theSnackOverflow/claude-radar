@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "Automatically discovers and recommends installed Claude Code tools",
   "license": "MIT",
-  "author": "2sac",
+  "author": "theSnackOverflow",
+  "homepage": "https://github.com/theSnackOverflow/claude-radar#readme",
+  "bugs": {
+    "url": "https://github.com/theSnackOverflow/claude-radar/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/2sac/claude-radar.git"
+    "url": "https://github.com/theSnackOverflow/claude-radar.git"
   },
-  "keywords": ["claude-code", "plugin", "tools", "discovery", "mcp", "skills"],
-  "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {}
+  "keywords": ["claude-code", "plugin", "tools", "discovery", "mcp", "skills"]
 }

@@ -5,7 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 if ! command -v jq &>/dev/null; then
-  echo "ERROR: jq가 설치되어 있지 않습니다. 'brew install jq' 또는 'apt install jq'로 설치하세요." >&2
+  echo "ERROR: jq is not installed." >&2
+  echo "  macOS:   brew install jq" >&2
+  echo "  Ubuntu:  sudo apt install jq" >&2
+  echo "  Windows: choco install jq  (or: scoop install jq  /  winget install jqlang.jq)" >&2
   exit 1
 fi
 
@@ -169,9 +172,10 @@ while IFS= read -r plugin_key; do
   desc_escaped=$(escape_json_string "$local_description")
   key_escaped=$(escape_json_string "$plugin_key")
   plugin_id_escaped=$(escape_json_string "plugin:${plugin_key}")
+  source_escaped=$(escape_json_string "$plugin_json_file")
 
-  plugin_entry=$(printf '{"id":%s,"type":"plugin","name":%s,"description":%s,"scope":"global","enabled":%s,"categories":[],"keywords":%s,"invocation":null}' \
-    "$plugin_id_escaped" "$name_escaped" "$desc_escaped" "$enabled" "$local_keywords")
+  plugin_entry=$(printf '{"id":%s,"type":"plugin","name":%s,"description":%s,"scope":"global","enabled":%s,"categories":[],"keywords":%s,"invocation":null,"source":%s}' \
+    "$plugin_id_escaped" "$name_escaped" "$desc_escaped" "$enabled" "$local_keywords" "$source_escaped")
 
   if [[ -n "$all_results" ]]; then
     all_results="${all_results}"$'\n'"${plugin_entry}"

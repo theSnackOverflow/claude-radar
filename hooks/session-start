@@ -7,14 +7,22 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INVENTORY_PATH="${HOME}/.claude/cache/claude-radar/inventory.json"
 
+source "${PLUGIN_ROOT}/scanner/lib/common.sh"
+
 escape_for_json() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
+    if command -v jq > /dev/null 2>&1; then
+        local raw
+        raw=$(escape_json_string "$1")
+        printf '%s' "${raw:1:${#raw}-2}"
+    else
+        local s="$1"
+        s="${s//\\/\\\\}"
+        s="${s//\"/\\\"}"
+        s="${s//$'\n'/\\n}"
+        s="${s//$'\r'/\\r}"
+        s="${s//$'\t'/\\t}"
+        printf '%s' "$s"
+    fi
 }
 
 scanner_error=""
@@ -42,6 +50,12 @@ if command -v jq > /dev/null 2>&1 && [ -f "${INVENTORY_PATH}" ]; then
     command_names=$(jq -r '[.tools[] | select(.type == "command") | .name] | join(", ")' "${INVENTORY_PATH}")
     command_count=$(jq '[.tools[] | select(.type == "command")] | length' "${INVENTORY_PATH}")
 
+    hook_names=$(jq -r '[.tools[] | select(.type == "hook") | .name] | join(", ")' "${INVENTORY_PATH}")
+    hook_count=$(jq '[.tools[] | select(.type == "hook")] | length' "${INVENTORY_PATH}")
+
+    output_style_names=$(jq -r '[.tools[] | select(.type == "output-style") | .name] | join(", ")' "${INVENTORY_PATH}")
+    output_style_count=$(jq '[.tools[] | select(.type == "output-style")] | length' "${INVENTORY_PATH}")
+
     lines=""
     lines="${lines}${total}개의 도구가 사용 가능합니다."
     lines="${lines}\n"
@@ -61,6 +75,12 @@ if command -v jq > /dev/null 2>&1 && [ -f "${INVENTORY_PATH}" ]; then
     if [ "${command_count}" -gt 0 ]; then
         lines="${lines}\n[Command ${command_count}개] ${command_names}"
     fi
+    if [ "${hook_count}" -gt 0 ]; then
+        lines="${lines}\n[Hook ${hook_count}개] ${hook_names}"
+    fi
+    if [ "${output_style_count}" -gt 0 ]; then
+        lines="${lines}\n[Output Style ${output_style_count}개] ${output_style_names}"
+    fi
 
     lines="${lines}\n\n도구 상세 조회 또는 현재 작업에 맞는 추천이 필요하면 claude-radar:discover skill을 사용하세요."
 
@@ -74,7 +94,7 @@ else
     if [ -n "${scanner_error}" ]; then
         fallback_msg="${fallback_msg} ${scanner_error}"
     elif ! command -v jq > /dev/null 2>&1; then
-        fallback_msg="${fallback_msg} jq가 설치되어 있지 않습니다."
+        fallback_msg="${fallback_msg} jq is not installed (macOS: brew install jq / Ubuntu: sudo apt install jq / Windows: choco install jq)."
     fi
     fallback_msg="${fallback_msg} 도구 추천이 필요하면 claude-radar:discover skill을 사용하세요."
     session_context="<claude-radar>\n${fallback_msg}\n</claude-radar>"
