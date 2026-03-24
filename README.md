@@ -30,19 +30,19 @@ As your Claude Code setup grows, it becomes easy to forget what tools you have i
 
 ## Installation
 
-Install claude-radar as a Claude Code plugin via the marketplace:
+### Step 1: Register marketplace
 
 ```
-/install-plugin claude-radar
+/plugin marketplace add theSnackOverflow/claude-radar
 ```
 
-Or install directly from the repository:
+### Step 2: Install plugin
 
 ```
-/install-plugin https://github.com/theSnackOverflow/claude-radar
+/plugin install claude-radar@claude-radar
 ```
 
-Once installed, claude-radar activates automatically on session start.
+Once installed, claude-radar activates automatically on the next session start.
 
 ## Usage
 

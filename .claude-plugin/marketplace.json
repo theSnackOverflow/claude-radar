@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-radar",
+  "description": "Claude Code 도구를 자동으로 발견하고 추천하는 플러그인",
+  "owner": {
+    "name": "theSnackOverflow"
+  },
+  "plugins": [
+    {
+      "name": "claude-radar",
+      "description": "Automatically discovers and recommends installed Claude Code tools based on your current context",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

@@ -6,6 +6,8 @@ All notable changes to claude-radar are documented here.
 
 ### Added
 
+- **Marketplace support**: `.claude-plugin/marketplace.json` 추가로 `/plugin marketplace add theSnackOverflow/claude-radar` 설치 지원
+
 - **Phase 1 - Inventory Scanner**: Detects all installed Claude Code tools at session start
   - 7 parsers: MCP servers, plugins, skills, agents, commands, hooks, output styles
   - Cache-aware scanning with mtime-based invalidation
