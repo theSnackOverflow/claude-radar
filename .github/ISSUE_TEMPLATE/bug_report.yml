@@ -1,0 +1,61 @@
+name: Bug Report
+description: Report a bug in claude-radar
+labels: ["bug"]
+body:
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "e.g. macOS 14.5, Ubuntu 22.04, Windows 11 WSL2"
+    validations:
+      required: true
+
+  - type: input
+    id: bash_version
+    attributes:
+      label: bash version
+      description: Output of `bash --version`
+      placeholder: "e.g. GNU bash, version 5.2.21"
+    validations:
+      required: true
+
+  - type: input
+    id: jq_version
+    attributes:
+      label: jq version
+      description: Output of `jq --version`
+      placeholder: "e.g. jq-1.7"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: debug_output
+    attributes:
+      label: Debug Output
+      description: Output of `CLAUDE_RADAR_DEBUG=1 bash ~/.claude/plugins/*/claude-radar/*/scanner/scan.sh --force` (optional but helpful)
+      render: shell

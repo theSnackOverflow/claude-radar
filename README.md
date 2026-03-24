@@ -77,6 +77,10 @@ Set `CLAUDE_RADAR_DEBUG=1` to enable verbose output from the scanner:
 CLAUDE_RADAR_DEBUG=1 bash ~/.claude/plugins/*/claude-radar/*/scanner/scan.sh --force
 ```
 
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
 ## License
 
 MIT
